@@ -7,6 +7,9 @@
  const bcrypt = require("bcrypt");
  const jwt = require("jsonwebtoken");
  const helper = require('../utils/index');
+ const {
+     sendVerificationEmail
+ } = require('../utils/mailer');
  const fs = require("fs");
  const path = require("path");
 
@@ -100,6 +103,28 @@
              });
 
 
+             //  Send Mail Start
+
+             // Utility function to generate a simple verification token (for example purposes)
+             const generateVerificationToken = (email) => {
+                 // You could use a JWT or a secure random string for this token
+                 return Buffer.from(email).toString('base64'); // Just a simple base64 encoding for illustration
+             };
+
+
+
+             // Generate a unique verification link (e.g., a token or URL with a token)
+             const verificationToken = generateVerificationToken(email); // Implement this function
+             const verificationLink = `http://localhost:8000/api/details/verify-email?token=${verificationToken}`;
+
+
+
+             // Send the verification email
+             await sendVerificationEmail(email, verificationLink);
+
+             // Send Mail End
+
+
              let data = helper.success(200, 'Data insert successfully !');
              return res.status(200).json(data);
 
@@ -111,6 +136,11 @@
              return res.status(500).json(data);
          }
      }
+
+
+
+
+
 
 
      /************* Vendor Signup API **************/
@@ -417,7 +447,7 @@
      /*********************Details**************** ****/
      userDetails = async (req, res) => {
          try {
-             const userData = await users.findOne({
+             const userData = await User.findOne({
                  where: {
                      id: req.user.user.id
                  }
