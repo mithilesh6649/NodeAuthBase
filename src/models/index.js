@@ -21,8 +21,13 @@ db.sequelize = sequelize;
 
 db.users = require("./users")(sequelize, Sequelize);
 db.categories = require("./category")(sequelize, Sequelize);
+
 db.user_categories = require("./user_categories")(sequelize, Sequelize);
 db.user_details = require("./user_details")(sequelize, Sequelize);
+db.user_timings = require("./user_timings")(sequelize, Sequelize);
+db.sub_categories = require("./sub_categories")(sequelize, Sequelize);
+db.user_timings = require("./user_timings")(sequelize, Sequelize);
+db.user_subcategories = require("./user_sub_categories")(sequelize, Sequelize);
 
 
 // One-to-One Relationship: A user has one user_detail
@@ -32,18 +37,37 @@ db.users.hasOne(db.user_details, {
 });
 
 
-// User Model
-db.users.belongsToMany(db.categories, {
-  through: db.user_categories, // Intermediary table
-  foreignKey: 'user_id', // Foreign key in the user_categories table for users
-  as: 'categories' // Alias to access categories from user
+db.users.hasMany(db.user_categories, {
+  foreignKey: 'user_id', // user_id in user_details table
+  as: 'userCategories' // Alias for user detail association
 });
 
-// Category Model
-db.categories.belongsToMany(db.users, {
-  through: db.user_categories, // Intermediary table
-  foreignKey: 'category_id', // Foreign key in the user_categories table for categories
-  as: 'users' // Alias to access users from category
+
+db.user_categories.belongsTo(db.categories, {
+  foreignKey: 'category_id',
+  as: 'categories' // Alias for accessing category details
+});
+
+db.users.hasMany(db.user_subcategories, {
+  foreignKey: 'user_id', // user_id in user_details table
+  as: 'userSubCategories' // Alias for user detail association
+});
+
+
+
+
+
+
+
+db.categories.hasMany(db.sub_categories, {
+  foreignKey: 'category_id', // The foreign key in sub_categories table
+  as: 'sub_categories' // Alias for accessing subcategories from category
+});
+
+// Sub Categories
+db.sub_categories.belongsTo(db.categories, {
+  foreignKey: 'category_id', // Foreign key in the sub_categories table for categories
+  as: 'categories' // Alias to access the category from a subcategory
 });
 
 

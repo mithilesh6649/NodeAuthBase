@@ -1,7 +1,7 @@
 const db = require("../models/index");
 const config = require("../config/config");
 const Category = db.categories;
-
+const SubCategory = db.sub_categories;
 const helper = require('../utils/index');
 
 //  load Validation
@@ -28,7 +28,14 @@ class MiscController {
                 offset: offset, // Skip the first (page - 1) * limit records
                 order: [
                     ['id', 'ASC']
-                ] // Optional: Sort by ID in ascending order (or other fields)
+                ], // Optional: Sort by ID in ascending order (or other fields)
+                include: [{
+                    model: SubCategory,
+                    as: 'sub_categories', // The alias defined in the Category model
+                    required: false, // Set to false to allow categories without subcategories
+                    attributes: ['id', 'name'], // You can choose the fields you want to include for subcategories
+                }]
+
             });
 
             // If no categories found

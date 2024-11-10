@@ -2,6 +2,8 @@
  const config = require("../config/config");
  const User = db.users;
  const UserCategory = db.user_categories;
+ const UserSubcategory = db.user_subcategories;
+ const UserTiming = db.user_timings;
  const UserDetail = db.user_details;
  const Category = db.categories;
  const bcrypt = require("bcrypt");
@@ -147,9 +149,10 @@
 
 
 
-     vendorRegistration = async (req, res) => {
+     vendorRegistrationOLD = async (req, res) => {
          const transaction = await db.sequelize.transaction();
          try {
+
              // Extract form data from request
              const {
                  first_name,
@@ -170,8 +173,11 @@
                  budget,
                  client_size_min,
                  client_size_max,
-                 category_id
+                 categories,
+                 timings
              } = req.fields;
+
+
 
              // Validate passwords match
              if (password !== confirm_password) {
@@ -276,6 +282,224 @@
              return res.status(500).json(data);
          }
      }
+
+
+
+     vendorRegistration = async (req, res) => {
+         const transaction = await db.sequelize.transaction();
+         try {
+             // Extract form data from request
+             const {
+                 first_name,
+                 last_name,
+                 email,
+                 password,
+                 phone_number,
+                 confirm_password,
+                 address,
+                 address_line2,
+                 country,
+                 state,
+                 city,
+                 zip_code,
+                 role_id,
+                 vendor_name,
+                 vendor_description,
+                 budget,
+                 client_size_min,
+                 client_size_max,
+                 categories, // Array of category/subcategory objects
+                 timings // Array of timing objects
+             } = req.fields;
+
+
+             // Parse categories if it is a string
+             let parsedCategories = [];
+             if (categories) {
+                 try {
+                     parsedCategories = JSON.parse(categories); // Convert string to array
+                 } catch (error) {
+                     console.error("Error parsing categories:", error);
+                     let data = helper.failed(400, 'Invalid categories format');
+                     return res.status(400).json(data);
+                 }
+             }
+
+             // Parse timings if it is a string
+             let parsedTimings = [];
+             if (timings) {
+                 try {
+                     parsedTimings = JSON.parse(timings); // Convert string to array
+                 } catch (error) {
+                     console.error("Error parsing timings:", error);
+                     let data = helper.failed(400, 'Invalid timings format');
+                     return res.status(400).json(data);
+                 }
+             }
+
+             console.log("Parsed Categories: ", parsedCategories);
+             console.log("Parsed Timings: ", parsedTimings);
+             console.log("Are categories an array? ", Array.isArray(parsedCategories)); // Should return true
+             console.log("Are timings an array? ", Array.isArray(parsedTimings)); // Should return true
+
+
+             // Validate required fields
+             if (!first_name || !last_name || !email || !password || !confirm_password || !phone_number || !address || !country || !state || !city || !zip_code || !role_id || !vendor_name || !vendor_description || !budget || !client_size_min || !client_size_max || !categories) {
+                 let data = helper.failed(400, 'Missing required fields');
+                 return res.status(400).json(data);
+             }
+
+             // Validate passwords match
+             if (password !== confirm_password) {
+                 let data = helper.failed(400, 'Passwords do not match');
+                 return res.status(400).json(data);
+             }
+
+             // Hash the password before storing it
+             const hashedPassword = await bcrypt.hash(password, 10);
+
+             // Check if the email already exists
+             const existingUser = await User.findOne({
+                 where: {
+                     email
+                 }
+             });
+             if (existingUser) {
+                 let data = helper.failed(400, 'Email already in use');
+                 return res.status(400).json(data);
+             }
+
+             // Create new user in the `users` table
+             const newUser = await User.create({
+                 first_name,
+                 last_name,
+                 email,
+                 password: hashedPassword,
+                 phone_number,
+                 address,
+                 address_line2,
+                 country,
+                 state,
+                 city,
+                 zip_code,
+                 role_id
+             }, {
+                 transaction
+             });
+
+             // Directory for image uploads
+             const targetDir = 'public/images';
+             const options = {
+                 maxSize: 5 * 1024 * 1024, // 5MB size limit
+                 allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+             };
+
+
+             //  console.log(req.files);
+             //  return false;
+
+             // Process image files
+             let imageUrl = null;
+             if (req.files && req.files.image) {
+                 imageUrl = await saveUploadedFile(req.files.image, targetDir, options); // Save profile image
+             }
+
+             // Process additional file uploads (food license, ID, etc.)
+             const foodLicenseUrl = req.files.food_license_url ? await saveUploadedFile(req.files.food_license_url, targetDir, options) : null;
+             const idImageUrl = req.files.id_image_url ? await saveUploadedFile(req.files.id_image_url, targetDir, options) : null;
+             const serviceImageUrl = req.files.service_image_url ? await saveUploadedFile(req.files.service_image_url, targetDir, options) : null;
+             const vendorLogo = req.files.vendor_logo ? await saveUploadedFile(req.files.vendor_logo, targetDir, options) : null;
+
+             // Create new vendor details in the `user_details` table
+             const newUserDetail = await UserDetail.create({
+                 user_id: newUser.id,
+                 vendor_name,
+                 vendor_description,
+                 budget,
+                 client_size_min,
+                 client_size_max,
+                 image_url: imageUrl,
+                 food_license_url: foodLicenseUrl,
+                 id_image_url: idImageUrl,
+                 service_image_url: serviceImageUrl,
+                 vendor_logo: vendorLogo
+             }, {
+                 transaction
+             });
+
+             // Create relationships between user and categories
+             if (Array.isArray(parsedCategories) && parsedCategories.length > 0) {
+                 for (const category of parsedCategories) {
+
+
+
+                     const {
+                         category_id,
+                         subcategories
+                     } = category;
+
+                     // Create UserCategory for each category
+                     await UserCategory.create({
+                         user_id: newUser.id,
+                         category_id: category_id
+                     }, {
+                         transaction
+                     });
+
+                     // Now associate subcategories
+                     if (Array.isArray(subcategories) && subcategories.length > 0) {
+                         for (const subcategory_id of subcategories) {
+                             await UserSubcategory.create({
+                                 user_id: newUser.id,
+                                 category_id: category_id,
+                                 subcategory_id: subcategory_id
+                             }, {
+                                 transaction
+                             });
+                         }
+                     }
+                 }
+             }
+
+             // Create user timings (if any)
+             if (Array.isArray(parsedTimings) && parsedTimings.length > 0) {
+                 for (const timing of parsedTimings) {
+                     const {
+                         day_id,
+                         day_name,
+                         start_time,
+                         end_time,
+                         status
+                     } = timing;
+                     await UserTiming.create({
+                         user_id: newUser.id,
+                         day_id,
+                         day_name,
+                         start_time,
+                         end_time,
+                         status: status || 1 // Default to 1 (active)
+                     }, {
+                         transaction
+                     });
+                 }
+             }
+
+             // Commit transaction
+             await transaction.commit();
+
+             // Return success response
+             let data = helper.success(201, 'Vendor registered successfully');
+             return res.status(201).json(data);
+
+         } catch (e) {
+             await transaction.rollback();
+             console.error('Error during vendor signup:', e);
+
+             let data = helper.failed(500, 'Something went wrong');
+             return res.status(500).json(data);
+         }
+     };
+
 
 
 
@@ -396,9 +620,21 @@
                          required: false // Ensure the user has user_details
                      },
                      {
-                         model: db.categories, // Categories associated with user
-                         as: 'categories', // Alias for categories model (you should use this alias based on the association)
-                         required: false // Categories are optional, so this can be false
+                         model: db.user_categories, // Categories associated with user
+                         as: 'userCategories', // Alias for categories model (you should use this alias based on the association)
+                         required: false, // Categories are optional, so this can be false
+                         include: [{
+                             model: db.categories, // Include the associated category
+                             as: 'categories', // Alias for category association in user_categories
+                             attributes: ['id', 'name'] // Only include id and name from categories
+                         }]
+
+                     },
+                     {
+                         model: db.user_subcategories, // Categories associated with user
+                         as: 'userSubCategories', // Alias for categories model (you should use this alias based on the association)
+                         required: false, // Categories are optional, so this can be false
+
                      }
                  ]
              });
@@ -454,6 +690,22 @@
              });
              let data = helper.success(200, 'Details get successfully!', userData);
              return res.status(200).json(data);
+
+         } catch (e) {
+             console.error('Error during :', e); // Log the actual error to understand the issue
+
+             let data = helper.failed(500, 'Something went to wrong !');
+             return res.status(500).json(data);
+         }
+     }
+
+
+     /*********************getVendorList**************** ****/
+     getVendorList = async (req, res) => {
+         try {
+
+
+
 
          } catch (e) {
              console.error('Error during :', e); // Log the actual error to understand the issue

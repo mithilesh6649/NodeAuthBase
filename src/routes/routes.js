@@ -19,7 +19,10 @@ router.post("/api/vendor/signup", authController.vendorRegistration);
 
 
 router.get("/api/category", miscController.getCategories);
+
 router.post("/api/login", authController.userLogin);
+
+router.get("/api/get/vendor/list", authController.getVendorList);
 
 
 //auth routes
