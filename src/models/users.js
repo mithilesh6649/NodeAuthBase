@@ -62,6 +62,26 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING(100),
             allowNull: true
         },
+        is_email_verified: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false, // Default is false, meaning the user hasn't verified their email
+            allowNull: false
+        },
+        email_verified_at: {
+            type: Sequelize.DATE,
+            allowNull: true, // This can be null initially until the user verifies their email
+            defaultValue: null // This ensures it starts as null
+        },
+        email_verify_token: {
+            type: Sequelize.STRING,
+            allowNull: true,
+            defaultValue: null
+        },
+        token_expiry: {
+            type: Sequelize.DATE,
+            allowNull: true,
+            defaultValue: null
+        }
     }, {
         timestamps: false
     });

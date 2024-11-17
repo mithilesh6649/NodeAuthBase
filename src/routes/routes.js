@@ -16,13 +16,14 @@ const {
 
 router.post("/api/signup", authController.userRegistration);
 router.post("/api/vendor/signup", authController.vendorRegistration);
-
-
 router.get("/api/category", miscController.getCategories);
-
 router.post("/api/login", authController.userLogin);
-
 router.get("/api/get/vendor/list", authController.getVendorList);
+
+router.post("/api/forgot/password", authController.forgotPassword)
+router.get("/verify-email", authController.verifyEmail);
+router.get("/reset-password", authController.showResetPasswordPage);
+router.post("/reset-password", authController.resetPassword);
 
 
 //auth routes

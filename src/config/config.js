@@ -21,6 +21,7 @@ let config = {
   },
 
   poolid: "#",
+  SITE_URL: process.env.SITE_URL,
   mailer: {
     MAIL_MAILER: process.env.MAIL_MAILER,
     MAIL_HOST: process.env.MAIL_HOST,

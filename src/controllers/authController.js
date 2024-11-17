@@ -10,7 +10,8 @@
  const jwt = require("jsonwebtoken");
  const helper = require('../utils/index');
  const {
-     sendVerificationEmail
+     sendVerificationEmail,
+     sendPasswordResetEmail
  } = require('../utils/mailer');
  const fs = require("fs");
  const path = require("path");
@@ -117,8 +118,9 @@
 
              // Generate a unique verification link (e.g., a token or URL with a token)
              const verificationToken = generateVerificationToken(email); // Implement this function
-             const verificationLink = `http://localhost:8000/api/details/verify-email?token=${verificationToken}`;
-
+             const verificationLink = `${config.SITE_URL}/verify-email?token=${verificationToken}`;
+             //  console.log(verificationLink);
+             //  return false;
 
 
              // Send the verification email
@@ -500,7 +502,211 @@
          }
      };
 
+     /*********************verifyEmail**************** ****/
+     verifyEmail = async (req, res) => {
+         try {
+             // Extract token from query params
+             const {
+                 token
+             } = req.query;
 
+
+             if (!token) {
+                 return res.render('verify-email', {
+                     message: 'Token is missing or invalid',
+                     messageType: 'error'
+                 });
+             }
+
+             // Decode the token (assuming it's base64 encoded email for simplicity)
+             const decodedEmail = Buffer.from(token, 'base64').toString('utf-8');
+             // Find user by decoded email
+             const user = await User.findOne({
+                 where: {
+                     email: decodedEmail
+                 }
+             });
+             if (!user) {
+                 return res.render('verify-email', {
+                     message: 'User not found',
+                     messageType: 'error'
+                 });
+             }
+
+
+             user.is_email_verified = true;
+             user.email_verified_at = new Date();
+             await user.save();
+
+             // Return success message to the view
+             return res.render('verify-email', {
+                 message: 'Your email has been successfully verified!',
+                 messageType: 'success'
+             });
+         } catch (error) {
+             console.error('Error during email verification:', error);
+             return res.render('verify-email', {
+                 message: 'Something went wrong, please try again later.',
+                 messageType: 'error'
+             });
+         }
+     };
+
+
+     /*********************forgotPassword********************/
+
+     forgotPassword = async (req, res) => {
+
+         try {
+             const {
+                 email
+             } = req.fields;
+
+
+             // Check if the email exists in the database
+             const user = await User.findOne({
+                 where: {
+                     email
+                 }
+             });
+             if (!user) {
+                 let data = helper.failed(400, 'No user found with this email address.');
+                 return res.status(400).json(data);
+             }
+
+             // Generate a JWT reset token that expires in 1 hour
+             const resetToken = jwt.sign({
+                 userId: user.id
+             }, config.JWT_SECRET_KEY, {
+                 expiresIn: '1h'
+             });
+
+
+
+
+             // Generate a reset link with the token
+             const resetLink = `${config.SITE_URL}/reset-password?token=${resetToken}`;
+
+
+             // Store the reset token and its expiration time (e.g., 1 hour)
+             user.email_verify_token = resetToken;
+             user.token_expiry = new Date(Date.now() + 3600000); // 1 hour from now
+             await user.save();
+
+             // Send the verification email
+             await sendPasswordResetEmail(email, resetLink);
+
+
+             let data = helper.success(200, 'Password reset link sent to your email address.');
+             return res.status(200).json(data);
+         } catch (error) {
+             console.error('Error in forgot password:', error);
+
+             let data = helper.failed(500, 'Something went wrong. Please try again later.');
+             return res.status(500).json(data);
+         }
+     };
+
+
+     /*********************showResetPasswordPage********************/
+
+     showResetPasswordPage = async (req, res) => {
+         const {
+             token
+         } = req.query; // Retrieve the token from the URL
+
+         try {
+             // Verify the token (if you used JWT for tokens)
+             const decoded = jwt.verify(token, config.JWT_SECRET_KEY);
+
+             const user = await User.findOne({
+                 where: {
+                     email_verify_token: token
+                 }
+             });
+
+
+
+             // Check if the token is valid
+             //  if (!user || new Date() > new Date(user.token_expiry)) {
+             //      return res.status(400).json({
+             //          error: 'Invalid or expired reset token'
+             //      });
+             //  }
+
+             if (!user) {
+                 return res.status(400).json({
+                     error: 'Invalid or expired reset token'
+                 });
+             }
+
+             // Render the reset password form
+             return res.render('reset-password', {
+                 token
+             }); // Pass the token to the EJS template
+         } catch (error) {
+             console.error('Error verifying token:', error);
+             return res.status(500).json({
+                 error: 'Something went wrong. Please try again later.'
+             });
+         }
+     };
+
+
+     /*********************resetPassword**************** ****/
+
+     // Reset Password - Handle Form Submission
+     resetPassword = async (req, res) => {
+         const {
+             token,
+             newPassword,
+             confirmPassword
+         } = req.fields;
+
+
+         if (newPassword !== confirmPassword) {
+             return res.status(400).json({
+                 error: 'Passwords do not match'
+             });
+         }
+
+         try {
+             // Find user by reset token
+             const user = await User.findOne({
+                 where: {
+                     email_verify_token: token
+                 }
+             });
+
+             // Check if the token is valid and not expired
+             if (!user || new Date() > new Date(user.reset_token_expiry)) {
+                 return res.status(400).json({
+                     error: 'Invalid or expired reset token'
+                 });
+             }
+
+             // Hash the new password
+             const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+             // Update the user's password and clear reset token
+             user.password = hashedPassword;
+             user.email_verify_token = null;
+             user.token_expiry = null;
+             await user.save();
+
+             // After successful reset, render the success page with a message
+             return res.render('password-reset-success', {
+                 message: 'Your password has been successfully reset. You can now log in.'
+             });
+
+
+         } catch (error) {
+             console.error('Error resetting password:', error);
+             return res.status(500).json({
+                 error: 'Something went wrong. Please try again later.'
+             });
+         }
+     };
 
 
 
@@ -719,5 +925,6 @@
 
 
  }
+
 
  module.exports = new AuthController();
