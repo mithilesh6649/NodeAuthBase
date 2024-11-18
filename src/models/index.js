@@ -29,6 +29,13 @@ db.sub_categories = require("./sub_categories")(sequelize, Sequelize);
 db.user_timings = require("./user_timings")(sequelize, Sequelize);
 db.user_subcategories = require("./user_sub_categories")(sequelize, Sequelize);
 
+db.user_menus = require("./user_menus")(sequelize, Sequelize);
+db.user_menu_items = require("./user_menu_item")(sequelize, Sequelize);
+db.user_menu_item_images = require("./MenuItemImage")(sequelize, Sequelize);
+//Menus
+
+
+
 
 // One-to-One Relationship: A user has one user_detail
 db.users.hasOne(db.user_details, {
@@ -70,6 +77,24 @@ db.sub_categories.belongsTo(db.categories, {
   as: 'categories' // Alias to access the category from a subcategory
 });
 
+
+
+// Menu..........
+
+// db.user_menus.belongsTo(db.users, {
+//   foreignKey: "user_id"
+// });
+// db.user_menus.belongsTo(db.categories, {
+//   foreignKey: "category_id"
+// });
+
+
+// Initialize associations
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
 
 module.exports = db;

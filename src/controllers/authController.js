@@ -117,14 +117,14 @@
 
 
              // Generate a unique verification link (e.g., a token or URL with a token)
-             const verificationToken = generateVerificationToken(email); // Implement this function
-             const verificationLink = `${config.SITE_URL}/verify-email?token=${verificationToken}`;
+             //    const verificationToken = generateVerificationToken(email); // Implement this function
+             //    const verificationLink = `${config.SITE_URL}/verify-email?token=${verificationToken}`;
              //  console.log(verificationLink);
              //  return false;
 
 
              // Send the verification email
-             await sendVerificationEmail(email, verificationLink);
+             //   await sendVerificationEmail(email, verificationLink);
 
              // Send Mail End
 
@@ -825,23 +825,23 @@
                          as: 'userDetail', // Alias for user_detail association
                          required: false // Ensure the user has user_details
                      },
-                     {
-                         model: db.user_categories, // Categories associated with user
-                         as: 'userCategories', // Alias for categories model (you should use this alias based on the association)
-                         required: false, // Categories are optional, so this can be false
-                         include: [{
-                             model: db.categories, // Include the associated category
-                             as: 'categories', // Alias for category association in user_categories
-                             attributes: ['id', 'name'] // Only include id and name from categories
-                         }]
+                     //  {
+                     //      model: db.user_categories, // Categories associated with user
+                     //      as: 'userCategories', // Alias for categories model (you should use this alias based on the association)
+                     //      required: false, // Categories are optional, so this can be false
+                     //      include: [{
+                     //          model: db.categories, // Include the associated category
+                     //          as: 'categories', // Alias for category association in user_categories
+                     //          attributes: ['id', 'name'] // Only include id and name from categories
+                     //      }]
 
-                     },
-                     {
-                         model: db.user_subcategories, // Categories associated with user
-                         as: 'userSubCategories', // Alias for categories model (you should use this alias based on the association)
-                         required: false, // Categories are optional, so this can be false
+                     //  },
+                     //  {
+                     //      model: db.user_subcategories, // Categories associated with user
+                     //      as: 'userSubCategories', // Alias for categories model (you should use this alias based on the association)
+                     //      required: false, // Categories are optional, so this can be false
 
-                     }
+                     //  }
                  ]
              });
 

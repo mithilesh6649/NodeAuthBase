@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var authController = require("../controllers/authController.js");
+var vendorController = require("../controllers/vendorController.js");
 var miscController = require("../controllers/miscController.js");
 const {
     upload
@@ -25,9 +26,16 @@ router.get("/verify-email", authController.verifyEmail);
 router.get("/reset-password", authController.showResetPasswordPage);
 router.post("/reset-password", authController.resetPassword);
 
+//Vendor section
+router.post("/api/forgot/password", authController.forgotPassword)
+
+
 
 //auth routes
-router.post("/api/details", Auth, authController.userDetails);
+router.post("/api/add/menu", Auth, vendorController.addMenus);
+router.post("/api/add/menu/item", Auth, vendorController.addMenuItem);
+
+router.get("/api/get/menu/list", Auth, vendorController.getMenuList);
 
 
 module.exports = router;
