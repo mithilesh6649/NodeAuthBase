@@ -79,11 +79,20 @@ module.exports = (sequelize, DataTypes) => {
     );
 
     // Define associations if needed
-    // UserMenuItem.associate = (models) => {
-    //   UserMenuItem.belongsTo(models.User, { foreignKey: "user_id" });
-    //   UserMenuItem.belongsTo(models.Category, { foreignKey: "category_id" });
-    //   UserMenuItem.belongsTo(models.UserMenu, { foreignKey: "user_menu_id" });
-    // };
+    UserMenuItem.associate = (models) => {
+        UserMenuItem.belongsTo(models.users, {
+            foreignKey: "user_id"
+        });
+        UserMenuItem.belongsTo(models.categories, {
+            foreignKey: "category_id"
+        });
+        UserMenuItem.belongsTo(models.user_menus, {
+            foreignKey: "user_menu_id"
+        })
+        UserMenuItem.hasMany(models.user_menu_item_images, {
+            foreignKey: "user_menu_item_id"
+        });
+    };
 
     return UserMenuItem;
 };

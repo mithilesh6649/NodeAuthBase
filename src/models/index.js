@@ -31,7 +31,7 @@ db.user_subcategories = require("./user_sub_categories")(sequelize, Sequelize);
 
 db.user_menus = require("./user_menus")(sequelize, Sequelize);
 db.user_menu_items = require("./user_menu_item")(sequelize, Sequelize);
-db.user_menu_item_images = require("./MenuItemImage")(sequelize, Sequelize);
+db.user_menu_item_images = require("./user_menu_item_images")(sequelize, Sequelize);
 //Menus
 
 

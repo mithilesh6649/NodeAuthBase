@@ -243,6 +243,66 @@ class VendorController {
         }
     };
 
+    getMenuItemList = async (req, res) => {
+        try {
+            // Get pagination parameters from the query string (default to page 1 and limit 10)
+            const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+            const limit = parseInt(req.query.limit) || 10; // Default to limit 10 if not provided
+
+            // Calculate offset based on current page and limit
+            const offset = (page - 1) * limit;
+
+            // Retrieve user menus with pagination and relations to User and Category
+            const usermenus = await UserMenuItem.findAndCountAll({
+                limit: limit, // Limit the number of records per page
+                offset: offset, // Skip the first (page - 1) * limit records
+                order: [
+                    ['id', 'ASC']
+                ],
+                where: {
+                    user_menu_id: 1 // Filter by user_id from the authenticated user
+                },
+                include: [{
+                    model: UserMenuItemImage, // Include the User model
+                    // as: 'user', // Alias defined in the UserMenus model
+                    required: false, // Set to false to allow UserMenus without a related User
+                    //  attributes: ['id', 'name'], // You can choose the fields you want to include for the user
+                }],
+
+            });
+
+            // If no usermenus found
+            if (!usermenus || usermenus.rows.length === 0) {
+                let data = helper.failed(404, 'No user menus found');
+                return res.status(404).json(data);
+            }
+
+            // Pagination info
+            const totalPages = Math.ceil(usermenus.count / limit); // Calculate total pages
+            const currentPage = page;
+            const totalItems = usermenus.count;
+            const data = {
+                usermenus: usermenus.rows, // The user menus data
+                pagination: {
+                    totalItems: totalItems,
+                    totalPages: totalPages,
+                    currentPage: currentPage,
+                    limit: limit
+                }
+            };
+
+            // Successful response with user menus data and pagination info
+            let response = helper.success(200, 'User menus retrieved successfully', data);
+            return res.status(200).json(response);
+
+        } catch (e) {
+            console.error('Error during user menu retrieval:', e); // Log the actual error to understand the issue
+
+            let data = helper.failed(500, 'Something went wrong!');
+            return res.status(500).json(data);
+        }
+    };
+
 }
 
 module.exports = new VendorController();

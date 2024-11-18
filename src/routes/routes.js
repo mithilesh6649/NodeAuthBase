@@ -36,6 +36,7 @@ router.post("/api/add/menu", Auth, vendorController.addMenus);
 router.post("/api/add/menu/item", Auth, vendorController.addMenuItem);
 
 router.get("/api/get/menu/list", Auth, vendorController.getMenuList);
+router.get("/api/get/menu/item/list", Auth, vendorController.getMenuItemList);
 
 
 module.exports = router;

@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
             },
         }, {
             tableName: "user_menu_item_images", // Use plural for table name for consistency
-            timestamps: true, // Enable timestamps for createdAt and updatedAt
+            timestamps: false, // Enable timestamps for createdAt and updatedAt
         }
     );
 
